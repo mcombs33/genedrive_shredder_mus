@@ -8,11 +8,17 @@ Simulates demographic, dispersal, and Y-Shredder gene drive processes across tim
 ## Yshred.v2
 Same as Yshred except juvenile dispersal rate is set to same value as adult dispersal rate. Used for initial set of simulations in manuscript.
 
+##Yshred.v2.chase
+Same as Yshred.v2 except max distance between patches with wildtype individuals and the nearest gene drive-harboring patch is recorded
+
 ## Xshred
 Simulates demographic, dispersal, and Y-Shredder gene drive processes across time steps. Requires input parameters and starting abundances for each sex-age-genotype combination.
 
 ## Xshred.v2
 Same as Xshred except juvenile dispersal rate is set to same value as adult dispersal rate. Used for initial set of simulations in manuscript.
+
+##Xshred.v2.chase
+Same as Xshred.v2 except max distance between patches with wildtype individuals and the nearest gene drive-harboring patch is recorded
 
 ## calculateCentroids
 Calculates XY position of patch centroids within square patch lattice. This function is implemented within the natMigration function.
@@ -39,24 +45,15 @@ Determines the number of mated females in each patch given male availability and
 ## minCheck
 Determines minimum value. Used to determine number of mated females.
 
+## dist2GdPatch
+Calcuates the minimum, maximum, and average distance between patches with wildtype individuals and the nearest gene drive-harboring patch is recorded.
+
 # Scripts:
 ## GDShredMus_XInitialSim.R
 Script to setup and run X-shredder gene drive simulations for house mouse metapopulation. Run parameters established within script.
 
 ## GDShredMus_YInitialSim.R
 Script to setup and run Y-shredder gene drive simulations for house mouse metapopulation. Run parameters established within script.
-
-## GDShredMus_XSensAnLimited_LHS.R
-Script to generate parameters for limited sensitivity analysis of X-Shredder system using latin hypercube sampling. Note that parameters must be combined with static parameters in correct column order before use.
-
-## GDShredMus_XSensAnLimited.R
-Script to run limited sensitivity analysis of X-Shredder gene drive.
-
-## GDShredMus_YSensAnLimited_LHS.R
-Script to generate parameters for limited sensitivity analysis of Y-Shredder system using latin hypercube sampling. Note that parameters must be combined with static parameters in correct column order before use.
-
-## GDShredMus_YSensAnLimited.R
-Script to run limited sensitivity analysis of X-Shredder gene drive.
 
 ## GDShredMus_XSensAnGlobal_LHS.R
 Script to generate parameters for global sensitivity analysis of X-Shredder system using latin hypercube sampling. Note that parameters must be combined with static parameters in correct column order before use.
