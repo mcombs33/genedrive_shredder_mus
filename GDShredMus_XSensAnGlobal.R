@@ -1,8 +1,3 @@
-### Title: Script to run global sensitivity analysis of X-Shredder gene drive
-### Author: Matthew Combs
-### Date: 26APR2024
-### Notes: parameters established beforehand and uploaded as .csv file
-########################
 library(parallel)
 library(doParallel)
 library(deSolve)   
@@ -22,18 +17,19 @@ basepath.out<-"~/outfiles/"
 outloc<-paste0(basepath.out, outfolder)
 dir.create(outloc)
 
+
 ##############################################################################
-#Set lattice size, time steps, iterations
+#quick parms
 NL<-31
-weeks<- 742 #30 years + 22 timesteps (burn-in)
-iterations<-50
+weeks<- 246 
+iterations<-100
 
 ##############################################################################
 #load params from csv
 tparms.csv<-read.csv(file="XSensAnGlobal_parms.csv", header=T)#import csv of params
 tparms.df<-as.data.frame(sapply(tparms.csv, as.numeric)) #make numeric
 
-vec1<-c(1:2500)
+vec1<-c(1:5000)
 tparms.df[1:nrow(tparms.df),(ncol(tparms.df)+1)]<-vec1  
 
 tparms.vec<-as.vector(t(tparms.df)) #transpose and vectorize
@@ -51,7 +47,7 @@ runResults<-FBM(ncol(tparms),5)
 ##############################################################################
 #Additional run setup
 
-#Null mating matrix, used in randBirthXS function
+#Null mating matrix
 b0 <-rep.int(0, NL*NL*3)
 Birthnull<-matrix(b0,ncol=(3),nrow=NL*NL,byrow = T) 
 
@@ -68,6 +64,7 @@ AndryProbs9<-c(1)
 AndryProbs10<-c(0.5,0.5) 
 AndryProbs11<-c(0.5,0.3,0.2) 
 AndryProbs12<-c(0.5,0.25,0.15,0.1) 
+
 PolyandryProbsList<-list(AndryProbs1,AndryProbs2,AndryProbs3,AndryProbs4,
                          AndryProbs5,AndryProbs6,AndryProbs7,AndryProbs8,
                          AndryProbs9,AndryProbs10,AndryProbs11,AndryProbs12)
@@ -132,7 +129,7 @@ foreach(
          0,0,Out10, Out30,
          InvFrq,ExtFrq,fqnXD0,fqnXY0,fqnXX0,1)
   
-  #Establish mating system parameters for specific iteration
+  #within model params
   PolyandrySeq<-seq(1,tparms[6,i],1)   #setup for polyandry 
   AndryRate<-tparms[17,i]
   if(AndryRate==1){
@@ -158,18 +155,18 @@ foreach(
   if(length(bir0)>2){    #if there are 3 or more times than check for consecutives
     for(k in 1:(length(bir0)-2)){
       if(bir0[k+1]==bir0[k]+1 & bir0[k+2]==bir0[k]+2){   #if there are 3 consecutive times with 0 births
-        runResults[i,]<-c(tparms[18,i],i, 1, bir0[k], (1-(temp.df[weeks,4]/temp.df[23,4])))
+        runResults[i,]<-c(tparms[19,i],i, 1, bir0[k], (1-(temp.df[weeks,4]/temp.df[6,4])))
         {break}
       } else {
-        runResults[i,]<-c(tparms[18,i],i,0,0,(1-(temp.df[weeks,4]/temp.df[23,4])))
+        runResults[i,]<-c(tparms[19,i],i,0,0,(1-(temp.df[weeks,4]/temp.df[6,4])))
       }
     }
   } else{
-    runResults[i,]<-c(tparms[18,i],i,0,0,(1-(temp.df[weeks,4]/temp.df[23,4])))
+    runResults[i,]<-c(tparms[19,i],i,0,0,(1-(temp.df[weeks,4]/temp.df[6,4])))
   }
   rm(temp)
   
-  if(i%%10000==0){
+  if(i%%50000==0){
     big_write(runResults, paste0(outloc,"/",outfolder,"_progRes_",i,".csv"), every_nrow = 1)
   }
 }

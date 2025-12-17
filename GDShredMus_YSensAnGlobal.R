@@ -1,15 +1,10 @@
-### Title: Script to run global sensitivity analysis of Y-Shredder gene drive
-### Author: Matthew Combs
-### Date: 26APR2024
-### Notes: parameters established beforehand and uploaded as .csv file
-########################
-library(parallel)
-library(doParallel)
 library(deSolve)   
 library(data.table)
 library(extraDistr)
 library(bigstatsr)
 library(bigreadr)
+library(parallel)
+library(doParallel)
 
 #############################################################################
 #load functions
@@ -18,22 +13,23 @@ source(file = "GDShredMus_Functions.R")
 ##############################################################################
 #Create output directory for csv outputs
 outfolder<-"YShred_SensGlobal"
-basepath.out<-"/lustrefs/nwrc/projects/gdsim/outfiles/"
+basepath.out<-"~/outfiles/"
 outloc<-paste0(basepath.out, outfolder)
 dir.create(outloc)
 
 ##############################################################################
-#Set lattice size, time steps, iterations
+#quick parms
 NL<-31
-weeks<- 742 #30 years + 22 timesteps (burn-in)
-iterations<-50
+weeks<- 246 
+iterations<-100
+
 
 ##############################################################################
 #load params from csv
 tparms.csv<-read.csv(file="YSensAnGlobal_parms.csv", header=T)#import csv of params
 tparms.df<-as.data.frame(sapply(tparms.csv, as.numeric)) #make numeric
 
-vec1<-c(1:2500)
+vec1<-c(1:5000)
 tparms.df[1:nrow(tparms.df),(ncol(tparms.df)+1)]<-vec1  
 
 tparms.vec<-as.vector(t(tparms.df)) #transpose and vectorize
@@ -46,13 +42,14 @@ tparms<-matrix(data=apply(tparms.mat, 2,
                           function(x) rep(x, iterations)), 
                ncol= ncol(tparms.mat) * iterations) #replicate each parm set by number of iterations
 
-#Setup matrix to write basic results
+#Setup matrix to write basic results to
 runResults<-FBM(ncol(tparms),5)
+
 
 ################################################################################
 #Establish additional run parameters
 
-#Null mating matrix, used in randBirthYS function
+#Null mating matrix
 b0 <-rep.int(0, NL*NL*10)
 Birthnull<-matrix(b0,ncol=(10),nrow=NL*NL,byrow = T) 
 
@@ -69,9 +66,11 @@ AndryProbs9<-c(1)
 AndryProbs10<-c(0.5,0.5) 
 AndryProbs11<-c(0.5,0.3,0.2) 
 AndryProbs12<-c(0.5,0.25,0.15,0.1) 
+
 PolyandryProbsList<-list(AndryProbs1,AndryProbs2,AndryProbs3,AndryProbs4,
                          AndryProbs5,AndryProbs6,AndryProbs7,AndryProbs8,
                          AndryProbs9,AndryProbs10,AndryProbs11,AndryProbs12)
+
 
 ################################################################################
 #Setup cluster
@@ -129,8 +128,6 @@ foreach(
   yn <-c(XXw0,XYw0,XOw0,XXH0,XXh0,XYH0,XYh0,XOH0,XOH0,jXXw0,jXYw0,jXOw0,jXXH0,jXXh0,jXYH0,jXYh0,jXOH0,jXOh0,
          Total0, sexRatio, births, GDMO0, 
          0,0,Out10,Out20,Out30,0,0,1)
-  
-  #Establish mating system parameters for specific iteration
   PolyandrySeq<-seq(1,tparms[6,i],1)   #setup for polyandry 
   AndryRate<-tparms[21,i]
   if(AndryRate==1){
@@ -141,7 +138,7 @@ foreach(
     PolyandryProbs<-PolyandryProbsList[[ 8 + (tparms[6,i]) ]]
   }
   ##############################################################################
-  #Setup run specific genotype probabilities for each iteration
+  #Setup run specific genotype probabilities
   Pc<-tparms[15,i]
   Pn<-tparms[16,i]
   Py<-tparms[17,i]
@@ -363,6 +360,7 @@ foreach(
   P18XOw<- (1-Xpass)*(1-Pc)*0.25
   P18nv <- Xpass*Pc*Pn*0.25 + Pc*Pn*0.25 + (1-Xpass)*Pc*Pn*0.25 + (1-Xpass)*(1-Pc)*0.25 + (1-Xpass)*Pc*(1-Pn)*0.5 + (1-Xpass)*Pc*Pn*0.25 + (1-Xpass)*(1-Pc)*0.25
   
+  
   ##############################################################################
   temp<-(ode(func = Yshred, y = yn, times = 0:(weeks-1), parms = tparms[,i], method = "iteration"))
   temp.df<-as.data.frame(temp[1:weeks,(ncol(temp)-7):ncol(temp)])
@@ -373,18 +371,18 @@ foreach(
   if(length(bir0)>2){    #if there are 3 or more times than check for consecutives
     for(k in 1:(length(bir0)-2)){
       if(bir0[k+1]==bir0[k]+1 & bir0[k+2]==bir0[k]+2){   #if there are 3 consecutive times with 0 births
-        runResults[i,]<-c(tparms[22,i],i, 1, bir0[k], (1-(temp.df[weeks,5]/temp.df[23,5])))
+        runResults[i,]<-c(tparms[22,i],i, 1, bir0[k], (1-(temp.df[weeks,5]/temp.df[7,5])))
         {break}
       } else {
-        runResults[i,]<-c(tparms[22,i],i,0,0,(1-(temp.df[weeks,5]/temp.df[23,5])))
+        runResults[i,]<-c(tparms[22,i],i,0,0,(1-(temp.df[weeks,5]/temp.df[7,5])))
       }
     }
   } else{
-    runResults[i,]<-c(tparms[22,i],i,0,0,(1-(temp.df[weeks,5]/temp.df[23,5])))
+    runResults[i,]<-c(tparms[22,i],i,0,0,(1-(temp.df[weeks,5]/temp.df[7,5])))
   }
   rm(temp)
   
-  if(i%%10000==0){
+  if(i%%50000==0){
     big_write(runResults, paste0(outloc,"/",outfolder,"_progRes_",i,".csv"), every_nrow = 1)
   }
 }
